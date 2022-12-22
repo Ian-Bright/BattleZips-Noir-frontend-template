@@ -1,7 +1,9 @@
 import { useWallet } from 'contexts/WalletContext';
 import {
-  ActiveGameLocationTemplate,
-  JoinGameLocationTemplate,
+  // ActiveGameLocationTemplate,
+  ActiveGameLocation,
+  JoinGameLocation,
+  // JoinGameLocationTemplate,
   NewGameLocation,
   ResourcesLocation,
   RootLocation,
@@ -18,11 +20,11 @@ const routeList = (isConnected: boolean) => [
     element: <Home />,
   },
   {
-    path: ActiveGameLocationTemplate,
+    path: ActiveGameLocation,
     element: isConnected ? <Game /> : <Navigate to={RootLocation} />,
   },
   {
-    path: JoinGameLocationTemplate,
+    path: JoinGameLocation,
     element: isConnected ? <BuildBoard /> : <Navigate to={RootLocation} />,
   },
   {

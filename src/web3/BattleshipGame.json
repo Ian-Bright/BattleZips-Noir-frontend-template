@@ -266,24 +266,9 @@
         "type": "uint256"
       },
       {
-        "internalType": "uint256[2]",
-        "name": "a",
-        "type": "uint256[2]"
-      },
-      {
-        "internalType": "uint256[2]",
-        "name": "b_0",
-        "type": "uint256[2]"
-      },
-      {
-        "internalType": "uint256[2]",
-        "name": "b_1",
-        "type": "uint256[2]"
-      },
-      {
-        "internalType": "uint256[2]",
-        "name": "c",
-        "type": "uint256[2]"
+        "internalType": "bytes",
+        "name": "_proof",
+        "type": "bytes"
       }
     ],
     "name": "joinGame",
@@ -299,24 +284,9 @@
         "type": "uint256"
       },
       {
-        "internalType": "uint256[2]",
-        "name": "a",
-        "type": "uint256[2]"
-      },
-      {
-        "internalType": "uint256[2]",
-        "name": "b_0",
-        "type": "uint256[2]"
-      },
-      {
-        "internalType": "uint256[2]",
-        "name": "b_1",
-        "type": "uint256[2]"
-      },
-      {
-        "internalType": "uint256[2]",
-        "name": "c",
-        "type": "uint256[2]"
+        "internalType": "bytes",
+        "name": "_proof",
+        "type": "bytes"
       }
     ],
     "name": "newGame",
@@ -374,24 +344,9 @@
         "type": "uint256[2]"
       },
       {
-        "internalType": "uint256[2]",
-        "name": "a",
-        "type": "uint256[2]"
-      },
-      {
-        "internalType": "uint256[2]",
-        "name": "b_0",
-        "type": "uint256[2]"
-      },
-      {
-        "internalType": "uint256[2]",
-        "name": "b_1",
-        "type": "uint256[2]"
-      },
-      {
-        "internalType": "uint256[2]",
-        "name": "c",
-        "type": "uint256[2]"
+        "internalType": "bytes",
+        "name": "_proof",
+        "type": "bytes"
       }
     ],
     "name": "turn",

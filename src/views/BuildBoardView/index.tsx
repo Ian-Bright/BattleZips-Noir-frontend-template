@@ -1,5 +1,3 @@
-import { SinglePedersen } from '@noir-lang/barretenberg/dest/crypto';
-import { BarretenbergWasm } from '@noir-lang/barretenberg/dest/wasm';
 import { useMemo, useState } from 'react';
 import { createUseStyles } from 'react-jss';
 import Board from 'components/Board';
@@ -12,22 +10,20 @@ import submarine from 'components/Board/images/submarineSelection.svg';
 import cruiser from 'components/Board/images/cruiserSelection.svg';
 import destroyer from 'components/Board/images/destroyerSelection.svg';
 import { ITx, transaction, getGameIndex } from 'web3/battleshipGame';
-import { IPFS_CIDS } from 'web3/constants';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useWallet } from 'contexts/WalletContext';
-import { ActiveGameLocation } from 'Locations';
-import { useMiMCSponge } from 'hooks/useMiMCSponge';
-import { buildProofArgs } from 'utils';
 import { toast } from 'react-hot-toast';
 import { BigNumber as BN } from 'ethers';
 import { IMetaTx, metatransaction } from 'web3/erc2771';
+import { generateProof } from 'utils/noir_tools';
+import { createShipHash } from 'utils';
 
 const useStyles = createUseStyles({
   content: {
     display: 'flex',
     gap: '114px',
     marginInline: 'auto',
-    width: 'fit-content'
+    width: 'fit-content',
   },
   fleetLabel: {
     borderRadius: '3px',
@@ -36,11 +32,11 @@ const useStyles = createUseStyles({
     fontWeight: 700,
     lineHeight: '34.68px',
     paddingBlock: '2px',
-    textAlign: 'center'
+    textAlign: 'center',
   },
   wrapper: {
-    outline: 'none'
-  }
+    outline: 'none',
+  },
 });
 
 const SHIPS: Ship[] = [
@@ -49,43 +45,43 @@ const SHIPS: Ship[] = [
     image: carrier,
     name: 'carrier',
     length: 5,
-    sections: []
+    sections: [],
   },
   {
     color: '#1C04D3',
     image: battleship,
     name: 'battleship',
     length: 4,
-    sections: []
+    sections: [],
   },
   {
     color: '#09D1E8',
     image: cruiser,
     name: 'cruiser',
     length: 3,
-    sections: []
+    sections: [],
   },
   {
     color: '#26F207',
     image: submarine,
     name: 'submarine',
     length: 3,
-    sections: []
+    sections: [],
   },
   {
     color: '#EFE707',
     image: destroyer,
     name: 'destroyer',
     length: 2,
-    sections: []
-  }
+    sections: [],
+  },
 ];
 
 export default function BuildBoard(): JSX.Element {
-  const { id } = useParams();
+  const [searchParams] = useSearchParams();
+  const id = searchParams.get('game');
   const styles = useStyles();
   const navigate = useNavigate();
-  const { mimcSponge } = useMiMCSponge();
   const { address, chainId, provider, biconomy } = useWallet();
   const [placedShips, setPlacedShips] = useState<Ship[]>([]);
   const [rotationAxis, setRotationAxis] = useState('y');
@@ -121,23 +117,16 @@ export default function BuildBoard(): JSX.Element {
   // given a board, return mimcSponge hash and zk proof of board integrity
   const boardProof = async (
     board: number[][]
-  ): Promise<{ hash: BigInt; proof: number[][] }> => {
-    const barrentenberg = await BarretenbergWasm.new();
-    console.log('Barretenberg: ', barrentenberg);
-    const _shipHash = mimcSponge.F.toObject(
-      await mimcSponge.multiHash(board.flat())
-    );
-    const { proof, publicSignals } = await window.snarkjs.groth16.fullProve(
-      { ships: board, hash: _shipHash },
-      IPFS_CIDS.board.circuit,
-      IPFS_CIDS.board.zkey
-    );
-    const vkey = await fetch(IPFS_CIDS.board.verification_key).then((res) => {
-      return res.json();
-    });
-    await window.snarkjs.groth16.verify(vkey, publicSignals, proof);
-    const proofArgs = buildProofArgs(proof);
-    return { hash: _shipHash, proof: proofArgs };
+  ): Promise<{ hash: string; proof: Buffer }> => {
+    const _shipHash = await createShipHash(board);
+    const abi = {
+      hash: _shipHash,
+      ships: board.flat(),
+    };
+    const proof = await generateProof('board', abi);
+    // TODO: Add browser verification
+    // await window.snarkjs.groth16.verify(vkey, publicSignals, proof);
+    return { hash: _shipHash, proof };
   };
 
   const startGame = async () => {
@@ -155,34 +144,27 @@ export default function BuildBoard(): JSX.Element {
       const switchedBoard = board.map((entry) => [
         entry[1],
         entry[0],
-        entry[2]
+        entry[2],
       ]);
       const { hash, proof } = await boardProof(switchedBoard);
       if (id) {
         toast.loading(`Attempting to join game ${id}...`, {
-          id: loadingToast
+          id: loadingToast,
         });
-        const params = [
-          +id,
-          BN.from(hash),
-          proof[0],
-          proof[1],
-          proof[2],
-          proof[3]
-        ];
+        const params = [+id, BN.from(hash), proof];
         if (biconomy) {
           const metatx: IMetaTx = {
             provider,
             biconomy,
             functionName: 'joinGame',
-            args: params
+            args: params,
           };
           await metatransaction(metatx);
         } else {
           const tx: ITx = {
             provider,
             functionName: 'joinGame',
-            args: params
+            args: params,
           };
           await transaction(tx);
         }
@@ -192,24 +174,24 @@ export default function BuildBoard(): JSX.Element {
         );
         toast.remove(loadingToast);
         toast.success(`Joined game ${id}`);
-        navigate(ActiveGameLocation(id));
+        navigate(`game?id=${id}`);
       } else {
         toast.loading(`Creating game...`, { id: loadingToast });
         const currentIndex = await getGameIndex(chainId, provider);
-        const params = [BN.from(hash), proof[0], proof[1], proof[2], proof[3]];
+        const params = [BN.from(hash), proof];
         if (biconomy) {
           const metatx: IMetaTx = {
             provider,
             biconomy,
             functionName: 'newGame',
-            args: params
+            args: params,
           };
           await metatransaction(metatx);
         } else {
           const tx: ITx = {
             provider,
             functionName: 'newGame',
-            args: params
+            args: params,
           };
           await transaction(tx);
         }
@@ -219,15 +201,15 @@ export default function BuildBoard(): JSX.Element {
         );
         toast.success('Game successfully created.', {
           duration: 5000,
-          id: loadingToast
+          id: loadingToast,
         });
-        navigate(ActiveGameLocation(`${+currentIndex + 1}`));
+        navigate(`game?id=${+currentIndex + 1}`);
       }
     } catch (err) {
       console.log('ERROR: ', err);
       toast.error(id ? 'Error joining game' : 'Error creating game', {
         id: loadingToast,
-        duration: 5000
+        duration: 5000,
       });
     }
   };

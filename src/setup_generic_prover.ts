@@ -4,47 +4,45 @@ import { PooledPippenger } from '@noir-lang/barretenberg/dest/pippenger';
 import { BarretenbergWasm, WorkerPool } from '@noir-lang/barretenberg/dest/wasm';
 import { Prover } from '@noir-lang/barretenberg/dest/client_proofs/prover';
 
-const circSize = 16;
+const circSize = 8192;
 const numWorkers = 4;
 
 
 async function load_crs(circSize: number) {
-    // We may need more elements in the SRS than the circuit size. In particular, we may need circSize +1
-    // We add an offset here to account for that
-    const offset = 1;
+  // We may need more elements in the SRS than the circuit size. In particular, we may need circSize +1
+  // We add an offset here to account for that
+  const offset = 1;
 
-    const crs = new Crs(circSize + offset);
-    await crs.download();
+  const crs = new Crs(circSize + offset);
+  await crs.download();
 
-    return crs;
+  return crs;
 }
 
-export default async function setup_generic_prover(serialised_circuit: any) {
+export default async function setup_generic_prover(serialised_circuit: any, size?: number) {
+  const crs = await load_crs(size ?? circSize);
 
-    const crs = await load_crs(circSize);
-    
-    const wasm = await BarretenbergWasm.new();
-    const workerPool = await WorkerPool.new(wasm, numWorkers);
-    const pippenger = new PooledPippenger(workerPool);
+  const wasm = await BarretenbergWasm.new();
+  const workerPool = await WorkerPool.new(wasm, numWorkers);
+  const pippenger = new PooledPippenger(workerPool);
+  const fft = new PooledFft(workerPool);
+  await fft.init(circSize);
 
-    const fft = new PooledFft(workerPool);
-    await fft.init(circSize);
+  await pippenger.init(crs.getData());
 
-    await pippenger.init(crs.getData());
+  const prover = new Prover(workerPool.workers[0], pippenger, fft);
 
-    const prover = new Prover(workerPool.workers[0], pippenger, fft);
+  const standardExampleProver = new StandardExampleProver(prover);
+  await standardExampleProver.initCircuitDefinition(serialised_circuit);
 
-    const standardExampleProver = new StandardExampleProver(prover);
-    await standardExampleProver.initCircuitDefinition(serialised_circuit);
+  // Create proving key with a dummy CRS
+  await standardExampleProver.computeKey();
 
-    // Create proving key with a dummy CRS
-    await standardExampleProver.computeKey();
-
-    return Promise.all([standardExampleProver]);
+  return Promise.all([standardExampleProver]);
 }
 
 class StandardExampleProver {
-  constructor(private prover: Prover) {}
+  constructor(private prover: Prover) { }
 
   // We do not pass in a constraint_system to this method
   // so that users cannot call it twice and possibly be
@@ -70,7 +68,6 @@ class StandardExampleProver {
 
     const witness_ptr = await worker.call('bbmalloc', witness_arr.length);
     await worker.transferToHeap(witness_arr, witness_ptr);
-
     const proverPtr = await worker.call('standard_example__new_prover', witness_ptr);
     const proof = await this.prover.createProof(proverPtr);
     await worker.call('standard_example__delete_prover', proverPtr);

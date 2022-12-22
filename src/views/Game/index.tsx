@@ -4,20 +4,19 @@ import Board from 'components/Board';
 import { Ship } from 'components/Board/types';
 import MainLayout from 'layouts/MainLayout';
 import OpponentBoard from 'components/Board/OpponentBoard';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useWallet } from 'contexts/WalletContext';
 import { RootLocation } from 'Locations';
 import { useGame } from 'hooks/useGame';
 import GameSkeleton from './components/GameSkeleton';
 import { playingGame, ITx, transaction } from 'web3/battleshipGame';
-import { IPFS_CIDS } from 'web3/constants';
 import eth from 'images/eth.svg';
 import { IMetaTx, metatransaction } from 'web3/erc2771';
 import { Shot } from './types';
 import { toast } from 'react-hot-toast';
-import { useMiMCSponge } from 'hooks/useMiMCSponge';
-import { buildProofArgs } from 'utils';
 import GameOver from './components/GameOver';
+import { createShipHash } from 'utils';
+import { generateProof } from 'utils/noir_tools';
 
 const useStyles = createUseStyles({
   content: {
@@ -54,11 +53,11 @@ const useStyles = createUseStyles({
 });
 
 export default function Game(): JSX.Element {
-  const { id } = useParams();
+  const [searchParams] = useSearchParams();
+  const id = searchParams.get('id');
   const styles = useStyles();
   const navigate = useNavigate();
   const { address, chainId, provider, biconomy } = useWallet();
-  const { mimcSponge } = useMiMCSponge();
   const [gameOver, setGameOver] = useState({ over: false, winner: '' });
   const [opponentShots, setOpponentShots] = useState<Shot[]>([]);
   const [placedShips, setPlacedShips] = useState<Ship[]>([]);
@@ -70,22 +69,18 @@ export default function Game(): JSX.Element {
     board: number[][],
     shot: number[],
     hit: boolean
-  ): Promise<{ hash: BigInt; proof: number[][] }> => {
-    const _shipHash = mimcSponge.F.toObject(
-      await mimcSponge.multiHash(board.flat())
-    );
-    const { proof, publicSignals } = await window.snarkjs.groth16.fullProve(
-      { ships: board, hash: _shipHash, shot, hit },
-      IPFS_CIDS.shot.circuit,
-      IPFS_CIDS.shot.zkey
-    );
-    const vkey = await fetch(IPFS_CIDS.shot.verification_key).then((res) => {
-      return res.json();
-    });
-    await window.snarkjs.groth16.verify(vkey, publicSignals, proof);
-    console.log('PUBLIC SIGNALS: ', publicSignals);
-    const proofArgs = buildProofArgs(proof);
-    return { hash: _shipHash, proof: proofArgs };
+  ): Promise<{ hash: string; proof: Buffer }> => {
+    const _shipHash = await createShipHash(board);
+    const abi = {
+      hash: _shipHash,
+      hit: hit ? 1 : 0,
+      ships: board.flat(),
+      shot,
+    };
+    const proof = await generateProof('shot', abi);
+    // TODO: Add in window verification
+    // await window.snarkjs.groth16.verify(vkey, publicSignals, proof);
+    return { hash: _shipHash, proof };
   };
 
   const getShotProof = async (shotCoords: number[], hit: boolean) => {
@@ -185,15 +180,7 @@ export default function Game(): JSX.Element {
         const proof = await getShotProof([lastShot.x, lastShot.y], hit);
         toast.loading('Firing shot...', { id: loadingToast });
         console.log('Proof: ', proof);
-        const params = [
-          +game.id,
-          hit,
-          [shot.x, shot.y],
-          proof[0],
-          proof[1],
-          proof[2],
-          proof[3],
-        ];
+        const params = [+game.id, hit, [shot.x, shot.y], proof];
         if (biconomy) {
           const metatx: IMetaTx = {
             provider,

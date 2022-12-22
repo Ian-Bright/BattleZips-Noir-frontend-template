@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import {
   ActiveGameLocation,
   JoinGameLocation,
-  NewGameLocation
+  NewGameLocation,
 } from 'Locations';
 import MainLayout from 'layouts/MainLayout';
 import { useMemo } from 'react';
@@ -22,7 +22,7 @@ const useStyles = createUseStyles({
     display: 'flex',
     gap: '200px',
     marginInline: 'auto',
-    width: 'fit-content'
+    width: 'fit-content',
   },
   gameOption: {
     alignItems: 'center',
@@ -30,7 +30,7 @@ const useStyles = createUseStyles({
     gap: '49px',
     marginInline: 'auto',
     textAlign: 'left',
-    width: '387px'
+    width: '387px',
   },
   gameOptions: {
     display: 'flex',
@@ -40,7 +40,7 @@ const useStyles = createUseStyles({
     gap: '36px',
     letterSpacing: '3.6px',
     lineHeight: '34.68px',
-    marginTop: '221px'
+    marginTop: '221px',
   },
   isInGame: {
     alignItems: 'center',
@@ -50,12 +50,12 @@ const useStyles = createUseStyles({
     fontWeight: 700,
     height: '400px',
     justifyContent: 'center',
-    letterSpacing: '3.6px'
+    letterSpacing: '3.6px',
   },
   left: {
     display: 'flex',
     flexDirection: 'column',
-    width: '551px'
+    width: '551px',
   },
   rejoin: {
     background: '#FF0055',
@@ -68,10 +68,10 @@ const useStyles = createUseStyles({
     lineHeight: '34.68px',
     margin: '48px auto 0 auto',
     padding: '6px 12px',
-    textAlign: 'center'
+    textAlign: 'center',
   },
   right: {
-    width: '523px'
+    width: '523px',
   },
   sectionHead: {
     borderRadius: '3px',
@@ -81,7 +81,7 @@ const useStyles = createUseStyles({
     letterSpacing: '3.6px',
     lineHeight: '34.68px',
     paddingBlock: '2px',
-    textAlign: 'center'
+    textAlign: 'center',
   },
   select: {
     alignItems: 'center',
@@ -91,13 +91,13 @@ const useStyles = createUseStyles({
     display: 'flex',
     height: '28px',
     justifyContent: 'center',
-    width: '28px'
+    width: '28px',
   },
   selected: {
     background: '#000000',
     borderRadius: '50%',
     height: '20px',
-    width: '20px'
+    width: '20px',
   },
   startButton: {
     borderRadius: '3px',
@@ -109,8 +109,8 @@ const useStyles = createUseStyles({
     margin: '239px auto 0 auto',
     paddingBlock: '2px',
     textAlign: 'center',
-    width: '245px'
-  }
+    width: '245px',
+  },
 });
 
 const GAME_OPTIONS = ['HOST GAME', 'JOIN GAME', 'JOIN RANDOM GAME'];
@@ -157,13 +157,15 @@ export default function Home(): JSX.Element {
       }
       case 1: {
         if (!games || !selectedGame) break;
-        navigate(JoinGameLocation(`${selectedGame.id}`));
+        // navigate(JoinGameLocation(`${selectedGame.id}`));
+        navigate(`join-game?game=${selectedGame.id}`);
         break;
       }
       case 2: {
         if (!games) break;
         const randomIndex = getRandomInt(0, games.length - 1);
-        navigate(JoinGameLocation(`${games[randomIndex].id}`));
+        // navigate(JoinGameLocation(`${games[randomIndex].id}`));
+        navigate(`join-game?game=${games[randomIndex].id}`);
         break;
       }
     }
@@ -183,7 +185,8 @@ export default function Home(): JSX.Element {
           <div>YOU ARE ALREADY IN A GAME</div>
           <div
             className={styles.rejoin}
-            onClick={() => navigate(ActiveGameLocation(`${activeGame}`))}
+            // onClick={() => navigate(ActiveGameLocation(`${activeGame}`))}
+            onClick={() => navigate(`game?id=${activeGame}`)}
           >
             REJOIN
           </div>
@@ -217,7 +220,7 @@ export default function Home(): JSX.Element {
               onClick={() => startGame()}
               style={{
                 background: disabled ? '#C7C7C7' : '#2861E9',
-                cursor: disabled ? 'not-allowed' : 'pointer'
+                cursor: disabled ? 'not-allowed' : 'pointer',
               }}
             >
               START GAME
