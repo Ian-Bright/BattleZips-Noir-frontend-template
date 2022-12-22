@@ -89,7 +89,7 @@
   },
   "scripts": {
     "start": "yarn generate && node scripts/start.js",
-    "build": "yarn generate && scripts/build.js",
+    "build": "yarn generate && node scripts/build.js",
     "generate": "graphql-codegen --config=codegen.yml",
     "test": "node scripts/test.js",
     "copy:all": "npm run copy:wasm && npm run copy:circuit && npm run copy:worker",
