@@ -1,11 +1,7 @@
 import { useEffect, useState } from 'react';
 import { createUseStyles } from 'react-jss';
 import { useNavigate } from 'react-router-dom';
-import {
-  ActiveGameLocation,
-  JoinGameLocation,
-  NewGameLocation,
-} from 'Locations';
+import { NewGameLocation } from 'Locations';
 import MainLayout from 'layouts/MainLayout';
 import { useMemo } from 'react';
 import { Game } from './types';
