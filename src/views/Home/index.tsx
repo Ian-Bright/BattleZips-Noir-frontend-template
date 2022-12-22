@@ -154,14 +154,14 @@ export default function Home(): JSX.Element {
       case 1: {
         if (!games || !selectedGame) break;
         // navigate(JoinGameLocation(`${selectedGame.id}`));
-        navigate(`join-game?game=${selectedGame.id}`);
+        navigate(`/join-game?game=${selectedGame.id}`);
         break;
       }
       case 2: {
         if (!games) break;
         const randomIndex = getRandomInt(0, games.length - 1);
         // navigate(JoinGameLocation(`${games[randomIndex].id}`));
-        navigate(`join-game?game=${games[randomIndex].id}`);
+        navigate(`/join-game?game=${games[randomIndex].id}`);
         break;
       }
     }

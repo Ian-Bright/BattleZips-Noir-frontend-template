@@ -174,7 +174,7 @@ export default function BuildBoard(): JSX.Element {
         );
         toast.remove(loadingToast);
         toast.success(`Joined game ${id}`);
-        navigate(`game?id=${id}`);
+        navigate(`/game?id=${id}`);
       } else {
         toast.loading(`Creating game...`, { id: loadingToast });
         const currentIndex = await getGameIndex(chainId, provider);
@@ -203,7 +203,7 @@ export default function BuildBoard(): JSX.Element {
           duration: 5000,
           id: loadingToast,
         });
-        navigate(`game?id=${+currentIndex + 1}`);
+        navigate(`/game?id=${+currentIndex + 1}`);
       }
     } catch (err) {
       console.log('ERROR: ', err);
