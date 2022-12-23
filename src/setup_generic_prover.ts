@@ -4,7 +4,6 @@ import { PooledPippenger } from '@noir-lang/barretenberg/dest/pippenger';
 import { BarretenbergWasm, WorkerPool } from '@noir-lang/barretenberg/dest/wasm';
 import { Prover } from '@noir-lang/barretenberg/dest/client_proofs/prover';
 
-const circSize = 8192;
 const numWorkers = 4;
 
 
@@ -19,8 +18,8 @@ async function load_crs(circSize: number) {
   return crs;
 }
 
-export default async function setup_generic_prover(serialised_circuit: any, size?: number) {
-  const crs = await load_crs(size ?? circSize);
+export default async function setup_generic_prover(serialised_circuit: any, circSize: number = 8092) {
+  const crs = await load_crs(circSize);
 
   const wasm = await BarretenbergWasm.new();
   const workerPool = await WorkerPool.new(wasm, numWorkers);

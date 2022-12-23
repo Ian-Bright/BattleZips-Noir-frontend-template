@@ -42,7 +42,6 @@ export const generateProof = async (proofType: Proof, input: BoardABI | ShotABI)
     buffer = await response.arrayBuffer();
     const bytes = new Uint8Array(buffer);
     const acir = acir_from_bytes(bytes);
-
     let [prover] = await setup_generic_prover(circuit, BOARD_SIZES[proofType]);
     const worker = new Worker(new URL('./worker.js', import.meta.url));
 
@@ -62,5 +61,7 @@ export const generateProof = async (proofType: Proof, input: BoardABI | ShotABI)
 
     const witness: any = await Promise.race([errorPromise, resultPromise]);
     const proof = await prover.createProof(witness);
+    console.log('Proof type: ', proofType);
+    console.log('Proof: ', proof)
     return proof;
 }
