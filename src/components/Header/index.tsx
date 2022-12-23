@@ -90,14 +90,6 @@ export default function Header(): JSX.Element {
       </div>
       <div className={styles.right}>
         <div
-          className={styles.docs}
-          onClick={() =>
-            window.open('https://battlezips.gitbook.io/battlezips')
-          }
-        >
-          Docs
-        </div>
-        <div
           className={styles.loginButton}
           onClick={() =>
             !isConnecting && (!isConnected ? connectWallet() : disconnect())
